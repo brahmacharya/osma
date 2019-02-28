@@ -1,49 +1,82 @@
-Settings=
-{
-  Name="OSMA",
-  slowEMA=26,
-  fastEMA=12,
-  MACD_SMA=9,
-  VType = "Close",
-  line=
-  {
-    	{
-	Name = "Horizontal line",
-	Type = TYPE_LINE, 
-	Color = RGB(140, 140, 140)
-	},
-	{
-	Width = 3,
-	Name = "OSMA_Up",
-	Type = TYPE_HISTOGRAM, 
-	Color = RGB(0, 206, 0)
-	},
-	{
-	Width = 3,
-	Name = "OSMA_Down",
-	Type = TYPE_HISTOGRAM, 
-	Color = RGB(221, 44, 44)
-	}
-  }
+Settings = {
+Name = "*OSMA", 
+SHORT_Period = 12, 
+LONG_Period = 26, 
+Metod = "EMA", --SMA, EMA, VMA, SMMA, VMA
+VType = "Close", --Open, High, Low, Close, Volume, Median, Typical, Weighted, Difference
+Signal_Metod = "SMA", --SMA, EMA, VMA, SMMA, VMA
+Signal_Period = 9, 
+Percent=1,
+line = {{
+		Name = "Horizontal line",
+		Type = TYPE_LINE, 
+		Color = RGB(140, 140, 140)
+		},
+		{
+		Width = 3,
+		Name = "OSMA_Up",
+		Type = TYPE_HISTOGRAM, 
+		Color = RGB(0, 206, 0)
+		},
+		{
+		Width = 3,
+		Name = "OSMA_Down",
+		Type = TYPE_HISTOGRAM, 
+		Color = RGB(221, 44, 44)
+		}
+		},
+Round = "off",
+Multiply = 1,
+Horizontal_line="0"
 }
 
 function Init()
-  func = MACD()
-  return #Settings.line
+	func = MACDH()
+	return #Settings.line
 end
 
-function OnCalculate(index)
-  local m0,m1 = ConvertValue(Settings,func(Index, Settings)
-  local HL = tonumber(Settings.Horizontal_line)
-  if(m0 == nil or m1 == nil) then
-    return tonumber(Settings.Horizontal_line), nil, nil
-  end
-  local Out = m0 - m1;
-  if Out > (HL or 0) then
-    return HL,Out,nil
-  else
-    return HL,nil,Out
-  end
+function OnCalculate(Index)
+local Out1,Out2 = ConvertValue(Settings,func(Index, Settings))
+local HL = tonumber(Settings.Horizontal_line)
+	if Out1 and Out2 then
+		local Out = Out1 - Out2
+		if Out > (HL or 0) then
+			return HL,Out,nil
+		else
+			return HL,nil,Out
+		end
+	else
+		return HL,nil,nil
+	end
+end
+
+function MACDH() --MACD Histogram ("MACDH")
+	local MACDH_MACD = MACD()
+	local it = {p=0, l=0}
+return function (I, Fsettings, ds)
+local Fsettings=(Fsettings or {})
+local ShortP = (Fsettings.SHORT_Period or 12)
+local LongP = (Fsettings.LONG_Period or 26)
+local M = (Fsettings.Metod or EMA) 
+local VT = (Fsettings.VType or CLOSE) 
+local SM = (Fsettings.Signal_Metod or SMA) 
+local SP = (Fsettings.Signal_Period or 9)
+local Percent = (Fsettings.Percent or 1)
+if (ShortP>0) and (LongP>0) and (SP>0) then 
+	if I == 1 then
+		it = {p=0, l=0}
+	end
+	local Out, Signal = MACDH_MACD(I, {SHORT_Period=ShortP, LONG_Period=LongP, Metod=M,
+						VType=VT, Signal_Metod=SM, Signal_Period=SP, Percent=Percent}, ds)
+	if CandleExist(I,ds) then
+		if I~=it.p then it={p=I, l=it.l+1} end
+		if Out and Signal then
+			return Out-Signal, Signal
+		end
+	end
+end
+return nil
+end
 end
 
 function MACD() --Moving Average Convergence/Divergence ("MACD")
@@ -53,13 +86,13 @@ function MACD() --Moving Average Convergence/Divergence ("MACD")
 	local it = {p=0, l=0}
 return function (I, Fsettings, ds)
 local Fsettings=(Fsettings or {})
-local ShortP = (Fsettings.fastEMA or 12)
-local LongP = (Fsettings.slowEMA or 26)
-local M = (EMA)
+local ShortP = (Fsettings.SHORT_Period or 12)
+local LongP = (Fsettings.LONG_Period or 26)
+local M = (Fsettings.Metod or EMA)
 local VT = (Fsettings.VType or CLOSE)
-local SM = (SMA)
-local SP = (Fsettings.MACD_SMA or 9)
-local Percent = (1)
+local SM = (Fsettings.Signal_Metod or SMA)
+local SP = (Fsettings.Signal_Period or 9)
+local Percent = (Fsettings.Percent or 1)
 if (ShortP>0) and (LongP>0) and (SP>0) then 
 	if I == 1 then
 		it = {p=0, l=0}
