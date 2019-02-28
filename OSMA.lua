@@ -7,26 +7,43 @@ Settings=
   VType = "Close",
   line=
   {
-    {
-      Name="MA",
-      Color=RGB(255,0,0),
-      Type=TYPE_LINE,
-      Width=2
-    }
+    	{
+	Name = "Horizontal line",
+	Type = TYPE_LINE, 
+	Color = RGB(140, 140, 140)
+	},
+	{
+	Width = 3,
+	Name = "OSMA_Up",
+	Type = TYPE_HISTOGRAM, 
+	Color = RGB(0, 206, 0)
+	},
+	{
+	Width = 3,
+	Name = "OSMA_Down",
+	Type = TYPE_HISTOGRAM, 
+	Color = RGB(221, 44, 44)
+	}
   }
 }
 
 function Init()
   func = MACD()
-	return #Settings.line
+  return #Settings.line
 end
 
 function OnCalculate(index)
-  local m = ConvertValue(Settings,func(Index, Settings)
-  if(m[0] == nil or m[1] == nil) then
-    return tonumber(Settings.Horizontal_line), nil   
+  local m0,m1 = ConvertValue(Settings,func(Index, Settings)
+  local HL = tonumber(Settings.Horizontal_line)
+  if(m0 == nil or m1 == nil) then
+    return tonumber(Settings.Horizontal_line), nil, nil
   end
-  return tonumber(Settings.Horizontal_line), m[1] - m[0]
+  local Out = m0 - m1;
+  if Out > (HL or 0) then
+    return HL,Out,nil
+  else
+    return HL,nil,Out
+  end
 end
 
 function MACD() --Moving Average Convergence/Divergence ("MACD")
